@@ -1,0 +1,40 @@
+version: '3.8'
+services:
+    mysql:
+        container_name: "${CONTAINER_NAME_PREFIX}-mysql"
+        image: 'mysql:8.0'
+        working_dir: /application
+        volumes:
+            - persistent:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+            - MYSQL_DATABASE=${DB_NAME}
+            - MYSQL_USER=${DB_USER}
+            - MYSQL_PASSWORD=${DB_PASSWORD}
+        ports:
+            - '20002:3306'
+
+    nginx:
+        container_name: "${CONTAINER_NAME_PREFIX}-nginx"
+        image: 'nginx:alpine'
+        working_dir: /application
+        volumes:
+            - '${PATH_TO_SYMFONY_PROJECT}:/application'
+            - './phpdocker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf'
+        ports:
+            - '20000:80'
+        depends_on:
+            - app
+
+    app:
+        container_name: "${CONTAINER_NAME_PREFIX}-app"
+        build: phpdocker/php-fpm
+        working_dir: /application
+        volumes:
+            - '${PATH_TO_SYMFONY_PROJECT}:/application'
+            - './phpdocker/php-fpm/php-ini-overrides.ini:/etc/php/8.2/fpm/conf.d/99-overrides.ini'
+        depends_on:
+            - mysql
+
+volumes:
+  persistent:
